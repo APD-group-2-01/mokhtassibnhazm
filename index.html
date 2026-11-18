@@ -914,12 +914,14 @@ function drawImport(){
     <div style="overflow:auto"><table class="data"><thead><tr><th>رمز مسار</th><th>النسب</th><th>الاسم</th><th>الجنس</th><th>تاريخ الازدياد</th><th>القسم</th><th>الهاتف</th></tr></thead>
      <tbody>${recs.slice(0,12).map(r=>`<tr><td class="mono">${esc(r.massar)}</td><td>${esc(r.nom)}</td><td>${esc(r.prenom)}</td><td>${r.sexe==='M'?'ذكر':r.sexe==='F'?'أنثى':'—'}</td><td class="mono">${fmtDate(r.naissance)}</td><td>${esc(r.classe)}</td><td class="mono">${esc(r.tel)}</td></tr>`).join('')}</tbody></table></div>
     <div class="hint">الموسم <b>${esc(S.settings.annee)}</b>: ${recs.length-nUpd} تلميذ(ة) سيُضافون${hasPrev?` (منهم <b>${nRet}</b> عائدون من موسم سابق و ${recs.length-nUpd-nRet} وافدون جدد)`:''}، و ${nUpd} موجودون مسبقاً في هذا الموسم سيتم تحديث بياناتهم — الحقول الفارغة في الملف لا تمحو البيانات الحالية.</div>
+    ${S.students.length?`<label class="row" style="gap:7px;margin-top:10px;padding:10px 12px;border:1.5px solid #f0c9a0;background:#fff8ef;border-radius:10px;font-weight:600"><input type="checkbox" id="impReplace" ${IMP.replace?'checked':''}>استبدال كامل: حذف كل التلاميذ الحاليين لموسم ${esc(S.settings.annee)} (${S.students.length}) ثم استيراد هذه اللائحة فقط — ينصح به لتصحيح استيراد خاطئ</label>`:''}
     ${hasPrev?`<label class="row" style="gap:7px;margin-top:8px"><input type="checkbox" id="impCarry" ${S.settings.carry!==false?'checked':''}>نقل الحالات الصحية والنفسية والاجتماعية للتلاميذ العائدين (يمكن تعديلها لاحقاً)</label>`:''}
    </div>
    <div class="mf"><button class="btn pri" data-a="imp-go">${ico('imp')}استيراد ${recs.length} تلميذ(ة)</button><button class="btn" data-a="imp-cancel">إلغاء</button></div></div>`;
   $$('[data-map]').forEach(sel=>sel.onchange=()=>{const h=sel.dataset.map,v=sel.value;if(v)for(const k in IMP.map)if(IMP.map[k]===v)delete IMP.map[k];if(v)IMP.map[h]=v;else delete IMP.map[h];drawImport()});
   $$('[name=clsm]').forEach(r=>r.onchange=()=>{IMP.clsMode=r.value;drawImport()});
   $$('[data-shcls]').forEach(inp=>inp.onchange=()=>{IMP.sheets[+inp.dataset.shcls].cls=inp.value.trim().replace(/\s+/g,'').toUpperCase();drawImport()});
+  const ir=$('#impReplace');if(ir)ir.onchange=()=>{IMP.replace=ir.checked};
   const ic=$('#impCarry');if(ic)ic.onchange=()=>{S.settings.carry=ic.checked;saveSettings()};
 
 }
@@ -928,6 +930,9 @@ async function importClick(a){
     ws['!cols']=Array(10).fill({wch:16});const wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};XLSX.utils.book_append_sheet(wb,ws,'التلاميذ');XLSX.writeFile(wb,'نموذج_استيراد_التلاميذ.xlsx')}
   if(a==='imp-cancel'){IMP=null;vImport()}
   if(a==='imp-go'&&buildImportRecords().some(r=>!r.classe)){toast('حدد القسم لكل ملف قبل الاستيراد');return}
+  if(a==='imp-go'&&IMP.replace&&S.students.length){const n=S.students.length,nl=S.logs.length;
+    if(!confirm(`سيتم حذف ${n} تلميذ(ة)${nl?` و ${nl} تدخل`:''} من موسم ${S.settings.annee} ثم استيراد ${buildImportRecords().length} تلميذ(ة) فقط. متابعة؟`))return;
+    await delStudents(S.students.map(x=>x.id))}
   if(a==='imp-go'){const y=S.settings.annee,carry=S.settings.carry!==false,recs=buildImportRecords(),idx=new Map(S.students.filter(s=>s.massar).map(s=>[s.massar,s]));const put=[];let nN=0,nU=0,nR=0;
     for(const r of recs){const ex=r.massar&&idx.get(r.massar);if(ex){for(const k in r)if(r[k])ex[k]=r[k];ex.niveau=niveauOf(ex.classe);put.push(ex);nU++}
       else{const o={...r,sante:[],psy:[],social:[],besoin:'',notes:'',annee:y,niveau:niveauOf(r.classe),createdAt:Date.now()};
@@ -1267,6 +1272,7 @@ function vSettings(){const s=S.settings;
     <div class="card p"><h3>أقسام الموسم ${esc(s.annee)}</h3>${classesList().length?`<div style="max-height:260px;overflow:auto"><table class="data"><thead><tr><th>القسم</th><th>المستوى</th><th>التلاميذ</th><th></th></tr></thead><tbody>
      ${classesList().map(c=>`<tr><td dir="ltr" style="text-align:right"><b>${esc(c)}</b></td><td>${esc(NIVEAUX[niveauOf(c)]||niveauOf(c))}</td><td>${S.students.filter(x=>x.classe===c).length}</td>
       <td class="act"><button class="btn sm icon" data-a="c-ren" data-c="${esc(c)}" title="إعادة تسمية">${ico('edit')}</button> <button class="btn sm icon danger" data-a="c-del" data-c="${esc(c)}" title="حذف القسم">${ico('trash')}</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty" style="padding:16px">لا توجد أقسام</div>'}</div>
+    ${S.students.length?`<div class="row" style="margin:-6px 0 14px"><button class="btn sm danger" data-a="c-empty">${ico('trash')}حذف كل تلاميذ موسم ${esc(s.annee)} (${S.students.length})</button></div>`:''}
     <div class="card p"><h3>المواسم الدراسية</h3><table class="data"><thead><tr><th>الموسم</th><th>التلاميذ</th><th>التدخلات</th><th></th></tr></thead><tbody>
      ${yearsList().slice().reverse().map(y=>`<tr><td class="mono"><b>${esc(y)}</b> ${y===s.annee?'<span class="bd b">نشط</span>':''}</td><td>${S.all.filter(x=>x.annee===y).length}</td><td>${S.allLogs.filter(l=>l.annee===y).length}</td>
       <td class="act">${y!==s.annee?`<button class="btn sm" data-a="yr-act" data-y="${esc(y)}">تفعيل</button> `:''}<button class="btn sm danger" data-a="yr-del" data-y="${esc(y)}">${ico('trash')}</button></td></tr>`).join('')}</tbody></table>
@@ -1295,6 +1301,7 @@ function removeBg(x,w,h){const im=x.getImageData(0,0,w,h),d=im.data,ref=[d[8],d[
   x.putImageData(im,0,0)}
 async function settingsClick(a,b){
   if(a==='c-del'){await deleteClass(b.dataset.c);return}
+  if(a==='c-empty'){if(confirm(`حذف كل التلاميذ (${S.students.length}) وتدخلاتهم من موسم ${S.settings.annee}؟ يمكنك بعدها إعادة الاستيراد.`)&&confirm('تأكيد نهائي؟')){await delStudents(S.students.map(x=>x.id));renderNav();vSettings();toast('تم تفريغ الموسم — يمكنك الآن إعادة الاستيراد')}return}
   if(a==='c-ren'){await renameClass(b.dataset.c);return}
   if(a==='lg-def'){delete S.settings['logo_'+b.dataset.k];await saveSettings();vSettings()}
   if(a==='lg-none'){S.settings['logo_'+b.dataset.k]='none';await saveSettings();vSettings()}
