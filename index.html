@@ -110,6 +110,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 @media(max-height:820px){.side{padding:12px 10px}.brand{padding:4px 8px 10px;margin-bottom:8px}.yearbox{padding:8px 10px;margin-bottom:8px}.yearbox button{margin-top:6px;padding:5px}
  .nav{padding:7px 12px;margin-bottom:1px}.instbtn{padding:5px;margin-bottom:6px}.speclogo{margin-bottom:4px}.speclogo img{height:72px!important}.side-foot{padding:6px 8px;line-height:1.5}}
 @media(max-height:680px){.side-foot>div:not(.speclogo){display:none}}
+tr.subt td{background:#f3f9f5;font-weight:700;color:#17402c}tr.gtot td{background:linear-gradient(90deg,#1f8a4c,#2fa866);color:#fff;font-weight:800;font-size:14.5px}tr.gtot td b{color:#fff}
 .selbox{background:#fff6e4;border:1px solid #f0d49c;color:#7a5410;border-radius:10px;padding:9px 11px;margin:10px 4px;font-size:12.5px;display:none;position:relative;z-index:1}
 .selbox.on{display:block}
 .selbox button{background:none;border:0;color:#1f8a4c;font-weight:700;text-decoration:underline;cursor:pointer;padding:0;font-size:12px}
@@ -372,7 +373,7 @@ const SANTE = ['إعاقة حركية','مرض مزمن','ضعف البصر','ض
 const PSY = ['الانطواء أو العزلة','الخوف من سوء المعاملة','ضعف تقدير الذات','الانسحاب المرضي','عقدة التفوق','الإدمان','أخرى'];
 const SOCIAL = ['يتيم الأب','يتيم الأم','يتيم الأبوين','الوالدان مطلقان','ولي الأمر: الجد','ولي الأمر: الجدة','ولي الأمر: كفيل','ولي الأمر: آخر','وضعية اجتماعية صعبة'];
 const HANDICAP_FLAGS = ['إعاقة حركية','ضعف البصر','ضعف السمع','مشاكل في النطق'];
-const NIVEAUX = {'1APIC':'الأولى إعدادي','2APIC':'الثانية إعدادي','3APIC':'الثالثة إعدادي','1AC':'الأولى إعدادي','2AC':'الثانية إعدادي','3AC':'الثالثة إعدادي','TC':'الجذع المشترك','1BAC':'الأولى باكالوريا','2BAC':'الثانية باكالوريا'};
+const NIVEAUX = {'1':'الأولى إعدادي','2':'الثانية إعدادي','3':'الثالثة إعدادي','1APIC':'الأولى إعدادي','2APIC':'الثانية إعدادي','3APIC':'الثالثة إعدادي','1AC':'الأولى إعدادي','2AC':'الثانية إعدادي','3AC':'الثالثة إعدادي','TC':'الجذع المشترك','1BAC':'الأولى باكالوريا','2BAC':'الثانية باكالوريا'};
 const DEF_SETTINGS = {
   academie:'الأكاديمية الجهوية للتربية والتكوين لجهة مراكش أسفي',
   direction:'المديرية الإقليمية أسفي',
@@ -610,6 +611,13 @@ function vDash(){
       <i style="width:${o.M/t*100}%;background:var(--m)" title="ذكور ${o.M}"></i><i style="width:${o.F/t*100}%;background:var(--f)" title="إناث ${o.F}"></i><i style="width:${o.U/t*100}%;background:#c6d0d8"></i></div><b>${t}</b></div>`}).join('')||'<div class="empty">لا توجد بيانات</div>'}</div></div>
    <div class="card p"><h3>التوزيع حسب السن</h3>${ak.length?`<div class="vbars">${ak.map(a=>`<div class="c"><b>${ages[a]}</b><i style="height:${ages[a]/maxA*130}px"></i>${a} س</div>`).join('')}</div>`:'<div class="empty">أدخل تواريخ الازدياد لعرض توزيع الأعمار</div>'}</div>
    <div class="card p"><h3>أكثر الحالات المرصودة</h3><div class="bars">${flags.map(([f,n,c])=>`<div class="br" style="grid-template-columns:150px 1fr 36px"><span style="font-size:12.5px">${esc(f)}</span><div class="track"><i style="width:${n/maxF*100}%;background:${c}"></i></div><b>${n}</b></div>`).join('')||'<div class="empty">لم يتم رصد أي حالة بعد — افتح بطاقة التلميذ وحدد حالته الصحية والنفسية والاجتماعية</div>'}</div></div>
+   ${classes.length?`<div class="card p" style="grid-column:1/-1"><div class="row"><h3 style="margin:0">التلاميذ حسب الأقسام</h3><span class="sp"></span><button class="btn sm" data-a="tpl" data-id="stats">${ico('print')}طباعة الإحصائيات</button></div>
+    <div style="overflow:auto;margin-top:10px"><table class="data"><thead><tr><th>القسم</th><th>ذكور</th><th>إناث</th><th>غير محدد</th><th>المجموع</th><th>حالات صحية</th><th>حالات نفسية</th><th>حالات اجتماعية</th></tr></thead><tbody>
+    ${(()=>{const row=(lab,a,cls='')=>`<tr class="${cls}"><td>${lab}</td><td>${a.filter(x=>x.sexe==='M').length}</td><td>${a.filter(x=>x.sexe==='F').length}</td><td>${a.filter(x=>!x.sexe).length}</td><td><b>${a.length}</b></td><td>${a.filter(x=>has(x,'sante')).length}</td><td>${a.filter(x=>has(x,'psy')).length}</td><td>${a.filter(x=>has(x,'social')).length}</td></tr>`;
+      let h='';for(const nv of [...new Set(classes.map(niveauOf))].sort(natCmp)){const cl=classes.filter(c=>niveauOf(c)===nv).sort(natCmp);
+        cl.forEach(c=>h+=row(`<span class="tag" dir="ltr">${esc(c)}</span>`,st.filter(x=>x.classe===c)));
+        h+=row(`<b>مجموع ${esc(NIVEAUX[nv]||nv)}</b>`,st.filter(x=>niveauOf(x.classe)===nv),'subt')}
+      return h+row('<b>المجموع العام</b>',st,'gtot')})()}</tbody></table></div></div>`:''}
    ${yearsList().length>1?`<div class="card p" style="grid-column:1/-1"><h3>مقارنة المواسم الدراسية</h3><table class="data"><thead><tr><th>الموسم</th><th>التلاميذ</th><th>الأقسام</th><th>ذكور</th><th>إناث</th><th>مكررون</th><th>وافدون جدد</th><th>حالات صحية</th><th>حالات نفسية</th><th>حالات اجتماعية</th><th>التدخلات</th></tr></thead><tbody>
      ${yearsList().map(y=>{const a=S.all.filter(x=>x.annee===y),h=k=>a.filter(x=>(x[k]||[]).filter(z=>z!=='حالة صحية جيدة').length).length;return `<tr${y===S.settings.annee?' style="background:#f3f9fa;font-weight:700"':''}><td class="mono">${esc(y)}</td><td>${a.length}</td><td>${new Set(a.map(x=>x.classe)).size}</td><td>${a.filter(x=>x.sexe==='M').length}</td><td>${a.filter(x=>x.sexe==='F').length}</td><td>${a.filter(isRedoub).length}</td><td>${yearsList()[0]===y?'—':a.filter(isNouveau).length}</td><td>${h('sante')}</td><td>${h('psy')}</td><td>${h('social')}</td><td>${S.allLogs.filter(l=>l.annee===y).length}</td></tr>`}).join('')}</tbody></table></div>`:''}
    <div class="card p"><div class="row"><h3 style="margin:0">آخر التدخلات</h3><span class="sp"></span><button class="btn sm" data-go="logs">عرض الكل</button></div>
@@ -656,6 +664,7 @@ function vStudents(){
      <option value="besoin" ${F.flag==='besoin'?'selected':''}>ذوو الاحتياجات الخاصة</option>
      ${yearsList().some(y=>y<S.settings.annee)?`<option value="redoub" ${F.flag==='redoub'?'selected':''}>المكررون (نفس المستوى الموسم السابق)</option><option value="nouveau" ${F.flag==='nouveau'?'selected':''}>الوافدون الجدد</option>`:''}</select>
     ${F.q||F.niveau||F.classe||F.sexe||F.age||F.flag?`<button class="btn sm" data-a="reset-f">مسح الفلاتر</button>`:''}
+    ${F.classe?`<button class="btn sm" data-a="cls-ren">${ico('edit')}إعادة تسمية القسم</button><button class="btn sm danger" data-a="cls-del">${ico('trash')}حذف القسم ${esc(F.classe)}</button>`:''}
    </div>
    <div id="stable"></div>
   </div>`;
@@ -675,7 +684,7 @@ function drawStudentTable(){
   $('#stable').innerHTML=!S.students.length?`<div class="empty">${ico('users')}<p>لا يوجد تلاميذ بعد.<br>استورد لائحة من Excel أو أضف تلميذاً يدوياً.</p><button class="btn pri" data-go="import">${ico('imp')}استيراد Excel</button></div>`:
   `<div class="pager" style="border-bottom:1px solid var(--line)"><span><b>${list.length}</b> نتيجة ${list.length?`— ذكور ${list.filter(s=>s.sexe==='M').length} · إناث ${list.filter(s=>s.sexe==='F').length}`:''}</span>
    <span class="row"><button class="btn sm" data-a="sel-filtered">${allSel?'إلغاء تحديد النتائج':'تحديد كل النتائج ('+list.length+')'}</button>
-   ${S.sel.size?`<button class="btn sm pri" data-go="docs">${ico('doc')}توليد وثيقة لـ ${S.sel.size}</button><button class="btn sm" data-a="bulk-sex" data-sx="M">تعيين: ذكر</button><button class="btn sm" data-a="bulk-sex" data-sx="F">تعيين: أنثى</button><button class="btn sm danger" data-a="bulk-del">${ico('trash')}حذف</button>`:''}</span></div>
+   ${S.sel.size?`<button class="btn sm pri" data-go="docs">${ico('doc')}توليد وثيقة لـ ${S.sel.size}</button><button class="btn sm" data-a="bulk-cls">تغيير القسم</button><button class="btn sm" data-a="bulk-sex" data-sx="M">تعيين: ذكر</button><button class="btn sm" data-a="bulk-sex" data-sx="F">تعيين: أنثى</button><button class="btn sm danger" data-a="bulk-del">${ico('trash')}حذف</button>`:''}</span></div>
   <div class="tblwrap"><table class="data"><thead><tr><th style="width:34px"><input type="checkbox" id="selAll" ${part.length&&part.every(s=>S.sel.has(s.id))?'checked':''}></th><th>رمز مسار</th><th>الاسم الكامل</th><th>الجنس</th><th>السن</th><th>القسم</th><th>هاتف الولي</th><th>الحالات</th><th style="width:80px"></th></tr></thead>
   <tbody>${part.map(s=>{const a=ageOf(s.naissance);return `<tr data-id="${s.id}" class="${S.sel.has(s.id)?'sel':''}"><td><input type="checkbox" class="selc" ${S.sel.has(s.id)?'checked':''}></td>
    <td class="mono">${esc(s.massar)}</td><td><b style="cursor:pointer" data-a="edit">${esc(fullName(s))}</b></td>
@@ -701,6 +710,10 @@ $('#view').addEventListener('click',async e=>{
     else if(a==='reset-f'){Object.assign(F,{q:'',niveau:'',classe:'',sexe:'',age:'',flag:'',page:0});vStudents()}
     else if(a==='sel-filtered'){const l=filtered(),all=l.every(s=>S.sel.has(s.id));l.forEach(s=>all?S.sel.delete(s.id):S.sel.add(s.id));renderNav();drawStudentTable()}
     else if(a==='bulk-sex'){const ids=[...S.sel];for(const i of ids){const s=byId(i);if(s){s.sexe=b.dataset.sx;s.niveau=niveauOf(s.classe)}}await DB.bulk('students',ids.map(byId).filter(Boolean));drawStudentTable();toast(`تم تحديث ${ids.length} تلميذ(ة)`)}
+    else if(a==='cls-del')deleteClass(F.classe);
+    else if(a==='cls-ren')renameClass(F.classe);
+    else if(a==='bulk-cls'){const c=prompt(`القسم الجديد لـ ${S.sel.size} تلميذ(ة) (مثال: 2/4 أو 2APIC-4):`);if(!c||!c.trim())return;const v=c.trim().replace(/\s+/g,'').toUpperCase();
+      const ids=[...S.sel];ids.forEach(i=>{const x=byId(i);if(x){x.classe=v;x.niveau=niveauOf(v)}});await DB.bulk('students',ids.map(byId).filter(Boolean));syncYear();drawStudentTable();toast(`تم نقل ${ids.length} تلميذ(ة) إلى القسم ${v}`)}
     else if(a==='bulk-del'){if(confirm(`حذف ${S.sel.size} تلميذ(ة) وسجلاتهم نهائياً؟`)){await delStudents([...S.sel]);renderNav();drawStudentTable();toast('تم الحذف')}}
     else if(a==='export-xls')exportStudentsXlsx(filtered());
   }
@@ -766,6 +779,12 @@ function openStudent(id){
     box.querySelectorAll('[data-stdoc]').forEach(b=>b.onclick=async()=>{await saveStudent(collect());closeModal();openBuilder(b.dataset.stdoc,{ids:[id]})})}
 }
 
+/* ---------- Gestion des classes ---------- */
+async function deleteClass(c){const ids=S.students.filter(x=>x.classe===c).map(x=>x.id),nl=S.logs.filter(l=>ids.includes(l.studentId)).length;
+  if(!ids.length)return;if(!confirm(`حذف القسم ${c} نهائياً: ${ids.length} تلميذ(ة)${nl?` و ${nl} تدخل مرتبط بهم`:''}؟\nيمكنك بعد ذلك إعادة استيراده.`))return;
+  await delStudents(ids);if(F.classe===c)F.classe='';renderNav();toast(`تم حذف القسم ${c}`);go(S.view,true)}
+async function renameClass(c){const v=prompt(`الاسم الجديد للقسم ${c}:`,c);if(!v||!v.trim()||v.trim()===c)return;const n=v.trim().replace(/\s+/g,'').toUpperCase();
+  const list=S.students.filter(x=>x.classe===c);list.forEach(x=>{x.classe=n;x.niveau=niveauOf(n)});await DB.bulk('students',list);syncYear();if(F.classe===c)F.classe=n;toast(`أصبح القسم ${c} ← ${n}`);go(S.view,true)}
 /* ---------- Export Excel ---------- */
 function exportStudentsXlsx(list){
   if(!list.length){toast('لا توجد بيانات للتصدير');return}
@@ -811,8 +830,8 @@ function vImport(){
    <div class="row"><button class="btn" data-a="tpl-xls">${ico('xls')}تحميل نموذج Excel فارغ</button></div></div>
   <div class="grid" style="grid-template-columns:1fr 330px">
    <div>
-    <label class="drop card" id="drop">${ico('imp')}<h3 style="margin:8px 0 4px">اسحب ملف Excel هنا أو انقر للاختيار</h3><div style="color:var(--mut);font-size:13px">يتم التعرف تلقائياً على الأعمدة: رمز مسار، النسب، الاسم، الجنس، تاريخ الازدياد، القسم، الهاتف…</div>
-     <input type="file" id="impFile" accept=".xlsx,.xls,.csv,.ods" hidden></label>
+    <label class="drop card" id="drop">${ico('imp')}<h3 style="margin:8px 0 4px">اسحب ملف Excel هنا أو انقر للاختيار — يمكن اختيار عدة ملفات (ملف لكل قسم)</h3><div style="color:var(--mut);font-size:13px">يتم التعرف تلقائياً على الأعمدة: رمز مسار، النسب، الاسم، الجنس، تاريخ الازدياد، القسم، الهاتف…</div>
+     <input type="file" id="impFile" accept=".xlsx,.xls,.csv,.ods" multiple hidden></label>
     <div id="impRes" style="margin-top:14px"></div>
    </div>
    <div class="card p"><h3>كيف يعمل الاستيراد؟</h3>
@@ -827,13 +846,23 @@ function vImport(){
   const drop=$('#drop'),inp=$('#impFile');
   ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
   ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
-  drop.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)readImport(f)});
-  inp.onchange=()=>{if(inp.files[0])readImport(inp.files[0]);inp.value=''};
+  drop.addEventListener('drop',e=>{const f=e.dataTransfer.files;if(f.length)readImport(f)});
+  inp.onchange=()=>{if(inp.files.length)readImport([...inp.files]);inp.value=''};
   $('#impNewY').onclick=openNewYear;
   if(IMP)drawImport();
 }
-async function readImport(file){
-  try{const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array',cellDates:true});const sheets=[];
+/* Détecte une cellule «القسم : X» / «Classe : X» et renvoie X */
+function classMarker(cells){for(let j=0;j<cells.length;j++){const c=cells[j],n=norm(c);if(!(n.startsWith('القسم')||n.startsWith('classe')||n.startsWith('الفصل')))continue;
+  let v=c.includes(':')||c.includes('：')?c.split(/[:：]/).slice(1).join(':'):c.replace(/^(القسم|الفصل|classe)/i,'');v=v.trim();
+  if(!v)v=(cells.slice(j+1).find(x=>x)||'');v=String(v).replace(/\s+/g,'').toUpperCase();if(v&&v.length<=20)return v}return ''}
+const GENERIC_SHEET=/^(feuil|feuille|sheet|ورقة|page|tableau|table|liste|list|export)\s*\d*$/i;
+function classFromName(n){n=String(n||'').replace(/\.(xlsx|xls|csv|ods)$/i,'').trim();if(!n||GENERIC_SHEET.test(n))return '';
+  let m=n.match(/(\d)\s*(apic|ac|asc)\s*[-_ .\/]?\s*(\d{1,2})/i);if(m)return `${m[1]}${m[2].toUpperCase()}-${m[3]}`;
+  m=n.match(/(?:^|\D)([1-3])\s*[-_ .\/]\s*(\d{1,2})(?:\D|$)/);if(m)return `${m[1]}/${m[2]}`;
+  return n.length<=12?n.replace(/\s+/g,'').toUpperCase():''}
+async function readImport(files){
+  files=[...(files.length!=null?files:[files])];
+  try{const sheets=[];for(const file of files){const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array',cellDates:true});const fromFile=classFromName(file.name);
     for(const name of wb.SheetNames){const aoa=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:'',raw:true,blankrows:false});if(!aoa.length)continue;
       let hidx=-1,best=0;for(let i=0;i<Math.min(30,aoa.length);i++){const sc=aoa[i].filter(c=>IMPF.some(f=>scoreHeader(c,f)>=3)).length;if(sc>best){best=sc;hidx=i}}
       if(best<2)continue;
@@ -841,12 +870,19 @@ async function readImport(file){
       // en-têtes sur deux lignes (ex: الاسم الكامل / النسب - الاسم)
       const nxt=aoa[hidx+1]||[];if(nxt.filter(c=>IMPF.some(f=>scoreHeader(c,f)>=3)).length>=2){headers=headers.map((h,i)=>String(nxt[i]||'').trim()||h);hidx++}
       let det='';for(let i=0;i<hidx;i++){const r=aoa[i];for(let j=0;j<r.length;j++){const c=String(r[j]||'');if(norm(c).includes('القسم')||norm(c).includes('classe')){const after=c.split(/[:：]/)[1];det=(after&&after.trim())||String(r.slice(j+1).find(x=>String(x).trim())||'').trim();if(det)break}}if(det)break}
-      const rows=aoa.slice(hidx+1).filter(r=>r.some(c=>String(c).trim()));
-      sheets.push({name,headers,rows,hidx,det:det.replace(/\s+/g,'').toUpperCase()})}
+      // Lignes de données + lignes séparatrices «القسم : 2/4» à l'intérieur de la feuille
+      const rows=[];let cur='',nMark=0;const hNorm=headers.map(norm).join('|');
+      for(const r of aoa.slice(hidx+1)){const cells=r.map(c=>String(c??'').trim());const filled=cells.filter(Boolean);if(!filled.length)continue;
+        const mk=classMarker(cells);if(mk&&filled.length<=4){cur=mk;nMark++;continue}
+        if(cells.map(norm).join('|')===hNorm||filled.filter(c=>IMPF.some(f=>scoreHeader(c,f)>=3)).length>=3)continue;
+        r.cls=cur;rows.push(r)}
+      det=det.replace(/\s+/g,'').toUpperCase();
+      const multi=new Set(rows.map(r=>r.cls).filter(Boolean)).size>1;
+      sheets.push({file:file.name,name,headers,rows,hidx,nMark,det,multi,cls:multi?'':(rows.find(r=>r.cls)?.cls||det||classFromName(name)||(wb.SheetNames.length===1?fromFile:'')||'')})}}
     if(!sheets.length){toast('لم يتم العثور على سطر عناوين معروف في الملف');return}
     const map=autoMap(sheets[0].headers);sheets.slice(1).forEach(sh=>{const m2=autoMap(sh.headers);for(const h in m2)if(!(h in map))map[h]=m2[h]});
-    const hasCls=Object.values(map).includes('classe');
-    IMP={file:file.name,sheets,map,clsMode:hasCls?'col':'sheet',fixed:'',mode:'upsert'};drawImport()
+    const hasCls=Object.values(map).includes('classe')&&!sheets.some(x=>x.nMark>1);
+    IMP={file:files.map(f=>f.name).join('، '),nFiles:files.length,sheets,map,clsMode:hasCls?'col':'sheet',mode:'upsert'};drawImport()
   }catch(err){console.error(err);toast('تعذرت قراءة الملف: '+err.message)}
 }
 function buildImportRecords(){
@@ -854,7 +890,7 @@ function buildImportRecords(){
     const rec={massar:String(o.massar||'').trim().toUpperCase(),nom:String(o.nom||'').trim(),prenom:String(o.prenom||'').trim(),sexe:normSexe(o.sexe),naissance:normDate(o.naissance),lieu:String(o.lieu||'').trim(),
       tel:String(o.tel||'').trim(),tuteur:String(o.tuteur||'').trim(),adresse:String(o.adresse||'').trim()};
     if(!rec.nom&&!rec.prenom&&o.fullname)rec.nom=String(o.fullname).trim();
-    let c='';if(IMP.clsMode==='col')c=String(o.classe||'').trim();if(!c&&IMP.clsMode!=='fixed')c=sh.det||sh.name;if(IMP.clsMode==='fixed')c=IMP.fixed;
+    let c='';if(IMP.clsMode==='col')c=String(o.classe||'').trim();if(!c)c=(sh.multi?r.cls:sh.cls)||r.cls||'';
     rec.classe=String(c).replace(/^القسم\s*:?\s*/,'').replace(/\s+/g,'').toUpperCase();
     if(!rec.nom&&!rec.prenom)continue;if(/^\d+$/.test(rec.nom)&&!rec.prenom)continue;out.push(rec)}}
   return out}
@@ -864,17 +900,15 @@ function drawImport(){
   const nRet=recs.filter(r=>r.massar&&!exist.has(r.massar)&&lastBefore(r.massar,S.settings.annee)).length,hasPrev=yearsList().some(y=>y<S.settings.annee);
   const cls=[...new Set(recs.map(r=>r.classe))].sort(natCmp);
   $('#impRes').innerHTML=`<div class="card">
-   <div class="mh"><h2>${ico('xls','style="width:18px;vertical-align:-3px"')} ${esc(IMP.file)}</h2><span class="tag">${IMP.sheets.length} ورقة</span><span class="tag">${recs.length} تلميذ(ة)</span><span class="tag">${cls.length} قسم</span></div>
+   <div class="mh"><h2>${ico('xls','style="width:18px;vertical-align:-3px"')} ${IMP.nFiles>1?IMP.nFiles+' ملفات':`<bdi dir="ltr">${esc(IMP.file)}</bdi>`}</h2><span class="tag">${IMP.sheets.length} ورقة</span><span class="tag">${recs.length} تلميذ(ة)</span><span class="tag">${cls.length} قسم</span></div>
    <div class="mb" style="max-height:none">
     <div class="sec-t" style="margin-top:0">ربط الأعمدة</div>
     <div class="form">${allH.map(h=>`<label class="fl">«${esc(h)}»<select class="inp" data-map="${esc(h)}"><option value="">— تجاهل —</option>${IMPF.map(f=>`<option value="${f.k}" ${IMP.map[h]===f.k?'selected':''}>${f.l}</option>`).join('')}</select></label>`).join('')}</div>
-    <div class="sec-t">مصدر القسم</div>
-    <div class="row">
-     <label class="row" style="gap:5px"><input type="radio" name="clsm" value="col" ${IMP.clsMode==='col'?'checked':''}>من عمود «القسم»</label>
-     <label class="row" style="gap:5px"><input type="radio" name="clsm" value="sheet" ${IMP.clsMode==='sheet'?'checked':''}>من رأس الورقة / اسم الورقة</label>
-     <label class="row" style="gap:5px"><input type="radio" name="clsm" value="fixed" ${IMP.clsMode==='fixed'?'checked':''}>قسم موحد:</label>
-     <input class="inp" id="impFixed" value="${esc(IMP.fixed)}" placeholder="مثال: 2APIC-4" dir="ltr" style="width:140px">
-    </div>
+    <div class="sec-t">القسم لكل ملف / ورقة</div>
+    ${Object.values(IMP.map).includes('classe')?`<div class="row" style="margin-bottom:8px"><label class="row" style="gap:5px"><input type="radio" name="clsm" value="col" ${IMP.clsMode==='col'?'checked':''}>من عمود «القسم» في الملف</label><label class="row" style="gap:5px"><input type="radio" name="clsm" value="sheet" ${IMP.clsMode==='sheet'?'checked':''}>كما هو محدد في الجدول أسفله</label></div>`:''}
+    ${IMP.clsMode==='col'?'':`<table class="data"><thead><tr><th>الملف</th><th>الورقة</th><th>عدد التلاميذ</th><th>القسم</th></tr></thead><tbody>${IMP.sheets.map((sh,i)=>`<tr><td><bdi dir="ltr">${esc(sh.file)}</bdi></td><td><bdi dir="ltr">${esc(sh.name)}</bdi></td><td><b>${sh.rows.length}</b></td>
+      <td>${sh.multi?`<span class="bd b">${new Set(sh.rows.map(r=>r.cls).filter(Boolean)).size} أقسام مكتشفة داخل الورقة</span>`:`<input class="inp" data-shcls="${i}" value="${esc(sh.cls)}" placeholder="اكتب القسم، مثال: 2/4" dir="ltr" style="width:150px;${sh.cls?'':'border-color:#d1503f;background:#fff4f2'}">`}</td></tr>`).join('')}</tbody></table>
+     ${IMP.sheets.some(sh=>!sh.multi&&!sh.cls)?`<div class="hint" style="border-color:#e9b3aa;color:#a3352d">⚠ لم يتم التعرف على القسم لبعض الملفات — اكتبه في الخانة الحمراء. يمكنك اختيار عدة ملفات دفعة واحدة (ملف لكل قسم): كل ملف يبقى قسماً مستقلاً.</div>`:''}`}
     <div style="margin-top:8px" class="chips">${cls.slice(0,40).map(c=>`<span class="tag">${esc(c||'بدون قسم')} · ${recs.filter(r=>r.classe===c).length}</span>`).join('')}</div>
     <div class="sec-t">معاينة (أول 12 سطراً)</div>
     <div style="overflow:auto"><table class="data"><thead><tr><th>رمز مسار</th><th>النسب</th><th>الاسم</th><th>الجنس</th><th>تاريخ الازدياد</th><th>القسم</th><th>الهاتف</th></tr></thead>
@@ -885,13 +919,15 @@ function drawImport(){
    <div class="mf"><button class="btn pri" data-a="imp-go">${ico('imp')}استيراد ${recs.length} تلميذ(ة)</button><button class="btn" data-a="imp-cancel">إلغاء</button></div></div>`;
   $$('[data-map]').forEach(sel=>sel.onchange=()=>{const h=sel.dataset.map,v=sel.value;if(v)for(const k in IMP.map)if(IMP.map[k]===v)delete IMP.map[k];if(v)IMP.map[h]=v;else delete IMP.map[h];drawImport()});
   $$('[name=clsm]').forEach(r=>r.onchange=()=>{IMP.clsMode=r.value;drawImport()});
+  $$('[data-shcls]').forEach(inp=>inp.onchange=()=>{IMP.sheets[+inp.dataset.shcls].cls=inp.value.trim().replace(/\s+/g,'').toUpperCase();drawImport()});
   const ic=$('#impCarry');if(ic)ic.onchange=()=>{S.settings.carry=ic.checked;saveSettings()};
-  $('#impFixed').onchange=e=>{IMP.fixed=e.target.value.trim().toUpperCase();if(IMP.fixed)IMP.clsMode='fixed';drawImport()};
+
 }
 async function importClick(a){
   if(a==='tpl-xls'){const ws=XLSX.utils.aoa_to_sheet([['رمز مسار','النسب','الاسم','الجنس','تاريخ الازدياد','مكان الازدياد','القسم','هاتف ولي الأمر','اسم ولي الأمر','العنوان'],['G123456789','العلوي','سلمى','أنثى','15/09/2013','أسفي','1APIC-1','06XXXXXXXX','','']]);
     ws['!cols']=Array(10).fill({wch:16});const wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};XLSX.utils.book_append_sheet(wb,ws,'التلاميذ');XLSX.writeFile(wb,'نموذج_استيراد_التلاميذ.xlsx')}
   if(a==='imp-cancel'){IMP=null;vImport()}
+  if(a==='imp-go'&&buildImportRecords().some(r=>!r.classe)){toast('حدد القسم لكل ملف قبل الاستيراد');return}
   if(a==='imp-go'){const y=S.settings.annee,carry=S.settings.carry!==false,recs=buildImportRecords(),idx=new Map(S.students.filter(s=>s.massar).map(s=>[s.massar,s]));const put=[];let nN=0,nU=0,nR=0;
     for(const r of recs){const ex=r.massar&&idx.get(r.massar);if(ex){for(const k in r)if(r[k])ex[k]=r[k];ex.niveau=niveauOf(ex.classe);put.push(ex);nU++}
       else{const o={...r,sante:[],psy:[],social:[],besoin:'',notes:'',annee:y,niveau:niveauOf(r.classe),createdAt:Date.now()};
@@ -1228,6 +1264,9 @@ function vSettings(){const s=S.settings;
       <div class="row" style="justify-content:center"><label class="btn sm">تغيير<input type="file" accept="image/*" hidden data-logo="${k}"></label><button class="btn sm" data-a="lg-def" data-k="${k}">الافتراضي</button><button class="btn sm danger" data-a="lg-none" data-k="${k}">إزالة</button></div></div>`).join('')}</div>
      <label class="row" style="gap:7px;margin-top:10px"><input type="checkbox" id="rmBg" checked>إزالة الخلفية البيضاء تلقائياً عند تغيير الشعار</label>
      <label class="row" style="gap:7px;margin-top:6px"><input type="checkbox" id="showLogos" ${s.showLogos!==false?'checked':''}>إظهار الشعارين في رأس كل الوثائق المطبوعة</label></div>
+    <div class="card p"><h3>أقسام الموسم ${esc(s.annee)}</h3>${classesList().length?`<div style="max-height:260px;overflow:auto"><table class="data"><thead><tr><th>القسم</th><th>المستوى</th><th>التلاميذ</th><th></th></tr></thead><tbody>
+     ${classesList().map(c=>`<tr><td dir="ltr" style="text-align:right"><b>${esc(c)}</b></td><td>${esc(NIVEAUX[niveauOf(c)]||niveauOf(c))}</td><td>${S.students.filter(x=>x.classe===c).length}</td>
+      <td class="act"><button class="btn sm icon" data-a="c-ren" data-c="${esc(c)}" title="إعادة تسمية">${ico('edit')}</button> <button class="btn sm icon danger" data-a="c-del" data-c="${esc(c)}" title="حذف القسم">${ico('trash')}</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty" style="padding:16px">لا توجد أقسام</div>'}</div>
     <div class="card p"><h3>المواسم الدراسية</h3><table class="data"><thead><tr><th>الموسم</th><th>التلاميذ</th><th>التدخلات</th><th></th></tr></thead><tbody>
      ${yearsList().slice().reverse().map(y=>`<tr><td class="mono"><b>${esc(y)}</b> ${y===s.annee?'<span class="bd b">نشط</span>':''}</td><td>${S.all.filter(x=>x.annee===y).length}</td><td>${S.allLogs.filter(l=>l.annee===y).length}</td>
       <td class="act">${y!==s.annee?`<button class="btn sm" data-a="yr-act" data-y="${esc(y)}">تفعيل</button> `:''}<button class="btn sm danger" data-a="yr-del" data-y="${esc(y)}">${ico('trash')}</button></td></tr>`).join('')}</tbody></table>
@@ -1255,6 +1294,8 @@ function removeBg(x,w,h){const im=x.getImageData(0,0,w,h),d=im.data,ref=[d[8],d[
     if(px>0)st.push(i-1);if(px<w-1)st.push(i+1);if(py>0)st.push(i-w);if(py<h-1)st.push(i+w)}
   x.putImageData(im,0,0)}
 async function settingsClick(a,b){
+  if(a==='c-del'){await deleteClass(b.dataset.c);return}
+  if(a==='c-ren'){await renameClass(b.dataset.c);return}
   if(a==='lg-def'){delete S.settings['logo_'+b.dataset.k];await saveSettings();vSettings()}
   if(a==='lg-none'){S.settings['logo_'+b.dataset.k]='none';await saveSettings();vSettings()}
   if(a==='yr-new')openNewYear();
